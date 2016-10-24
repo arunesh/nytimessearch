@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">NYTimesSearch</string>
+    <string name="etHint">Enter search query</string>
+    <string name="search">Search</string>
+    <string name="title_activity_article">ArticleActivity</string>
+    <string name="beginDate">Begin date:</string>
+    <string name="sortOrder">Sort order:</string>
+    <string name="newsDesk">News desk values:</string>
+    <string name="arts">Arts</string>
+    <string name="FashionAndStyle"><![CDATA[Fashion & Style]]></string>
+    <string name="Sports">Sports</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="Save">Save</string>
+</resources>
