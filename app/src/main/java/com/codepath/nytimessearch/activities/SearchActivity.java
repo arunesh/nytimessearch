@@ -39,7 +39,7 @@ import static com.codepath.nytimessearch.data.Article.fromJSONArray;
 public class SearchActivity extends AppCompatActivity {
     public static final String API_KEY = "392973d3573947fbad541d56ea18a9c4";
     public static final int REQUEST_CODE = 101;
-    public static final int BASE_GRIDVIEW_CAPACITY = 30; // we load a min of 50 items.
+    public static final int BASE_GRIDVIEW_CAPACITY = 30; // we load a min of 30 items.
     EditText etQuery;
     GridView gvResults;
     Button btnSearch;
@@ -67,6 +67,7 @@ public class SearchActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         setupViews();
+        makeSearchApiCall(true, 0);
     }
 
     private void setupViews() {
