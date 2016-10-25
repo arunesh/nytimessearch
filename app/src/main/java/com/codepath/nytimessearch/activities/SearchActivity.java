@@ -33,6 +33,8 @@ import java.util.ArrayList;
 
 import cz.msebera.android.httpclient.Header;
 
+import static com.codepath.nytimessearch.data.Article.fromJSONArray;
+
 
 public class SearchActivity extends AppCompatActivity {
     public static final String API_KEY = "392973d3573947fbad541d56ea18a9c4";
@@ -134,9 +136,16 @@ public class SearchActivity extends AppCompatActivity {
                 JSONArray jsonArticle = null;
                 try {
                     jsonArticle = response.getJSONObject("response").getJSONArray("docs");
-                    articleArrayAdapter.addAll(Article.fromJSONArray(jsonArticle));
+                    ArrayList<Article> resultList = Article.fromJSONArray(jsonArticle);
+                    articleArrayAdapter.addAll(resultList);
                     endlessScrollListener.onLoaded(targetPage, articleArrayAdapter.getCount());
-                    loadMoreIntoGridviewIfNeeded(targetPage);
+                    if (resultList.size() >= 10) {
+                        loadMoreIntoGridviewIfNeeded(targetPage);
+                    }
+                    if (resultList.size() == 0) {
+                        endlessScrollListener.setLimitReached(targetPage, articleArrayAdapter.getCount());
+                    }
+                    Log.d("DEBUG", "resultList size = "  + resultList.size());
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

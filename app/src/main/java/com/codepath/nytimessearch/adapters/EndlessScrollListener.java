@@ -3,6 +3,8 @@ package com.codepath.nytimessearch.adapters;
 import android.util.Log;
 import android.widget.AbsListView;
 
+import static android.R.attr.max;
+
 /**
  * Created by arunesh on 10/24/16.
  */
@@ -23,6 +25,8 @@ public abstract  class EndlessScrollListener implements AbsListView.OnScrollList
 
     // Sets the starting page index
     private int startingPageIndex = 0;
+
+    private int maxLimitPage = -1; // maximum value for "page"
 
     public EndlessScrollListener() {
 
@@ -56,6 +60,10 @@ public abstract  class EndlessScrollListener implements AbsListView.OnScrollList
         // the visibleThreshold and need to reload more data.
         // If we do need to reload some more data, we execute onLoadMore to fetch the data.
         if (!loading && (firstVisibleItem + visibleItemCount + visibleThreshold) >= totalItemCount ) {
+            if (maxLimitPage > 0 && (currentPage + 1)>= maxLimitPage) {
+                Log.d("DEBUG", "Not loading, limit reached.");
+                return;
+            }
             loading = onLoadMore(currentPage + 1, totalItemCount);
         }
     }
@@ -68,6 +76,7 @@ public abstract  class EndlessScrollListener implements AbsListView.OnScrollList
     public void reset() {
         currentPage = startingPageIndex;
         loading = true;
+        maxLimitPage = -1;
     }
 
     public void onLoaded(int page, int totalItemCount) {
@@ -80,6 +89,12 @@ public abstract  class EndlessScrollListener implements AbsListView.OnScrollList
     public void onLoadFailed(int page, int totalItemCount) {
         currentPage = page - 1;
         loading = false;
+        previousTotalItemCount = totalItemCount;
+    }
+
+    public void setLimitReached(int page, int totalItemCount) {
+        loading = false;
+        maxLimitPage = page;
         previousTotalItemCount = totalItemCount;
     }
 
