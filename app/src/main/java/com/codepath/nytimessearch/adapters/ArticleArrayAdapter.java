@@ -1,4 +1,4 @@
-package com.codepath.nytimessearch;
+package com.codepath.nytimessearch.adapters;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -10,9 +10,9 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.codepath.nytimessearch.R;
+import com.codepath.nytimessearch.data.Article;
 import com.squareup.picasso.Picasso;
-
-import org.w3c.dom.Text;
 
 import java.util.List;
 
@@ -45,6 +45,9 @@ public class ArticleArrayAdapter extends ArrayAdapter<Article> {
         String url = article.getThumbNail();
         if (!TextUtils.isEmpty(url)) {
             Picasso.with(getContext()).load(article.getThumbNail()).into(imageView);
+        } else {
+            imageView.setImageResource(R.drawable.article);
+            imageView.setScaleType(ImageView.ScaleType.FIT_XY);
         }
         TextView textView = (TextView) convertView.findViewById(R.id.tvTitle);
         textView.setText(article.getHeadline());

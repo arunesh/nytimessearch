@@ -1,4 +1,4 @@
-package com.codepath.nytimessearch;
+package com.codepath.nytimessearch.data;
 
 import android.os.Parcel;
 import android.os.Parcelable;

@@ -1,6 +1,7 @@
 package com.codepath.nytimessearch.activities;
 
 import android.content.Intent;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -15,8 +16,9 @@ import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.Toast;
 
-import com.codepath.nytimessearch.Article;
-import com.codepath.nytimessearch.ArticleArrayAdapter;
+import com.codepath.nytimessearch.adapters.EndlessScrollListener;
+import com.codepath.nytimessearch.data.Article;
+import com.codepath.nytimessearch.adapters.ArticleArrayAdapter;
 import com.codepath.nytimessearch.R;
 import com.codepath.nytimessearch.data.Filters;
 import com.loopj.android.http.AsyncHttpClient;
@@ -28,22 +30,33 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.logging.Filter;
 
 import cz.msebera.android.httpclient.Header;
-import cz.msebera.android.httpclient.util.TextUtils;
 
-import static android.R.attr.data;
 
 public class SearchActivity extends AppCompatActivity {
     public static final String API_KEY = "392973d3573947fbad541d56ea18a9c4";
     public static final int REQUEST_CODE = 101;
+    public static final int BASE_GRIDVIEW_CAPACITY = 30; // we load a min of 50 items.
     EditText etQuery;
     GridView gvResults;
     Button btnSearch;
     ArrayList<Article> articles;
     ArrayAdapter<Article> articleArrayAdapter;
     Filters searchFilters;  // Set to null when there are no filters.
+    Handler handler = new Handler();
+
+
+    private final class SearchEndlessScrollListener extends  EndlessScrollListener {
+        @Override
+        public boolean onLoadMore(int page, int totalItemsCount) {
+            Log.d("DEBUG", "Calling load for page " + page + " and total = " + totalItemsCount);
+            makeSearchApiCall(false, page);
+            return true;
+        }
+    }
+
+    SearchEndlessScrollListener endlessScrollListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,16 +85,36 @@ public class SearchActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        endlessScrollListener = new SearchEndlessScrollListener();
+        gvResults.setOnScrollListener(endlessScrollListener);
     }
 
     public void onArticleSearch(View view) {
+        // When the user clicks the reset button, we clear the data in the list.
+        makeSearchApiCall(true, 0);
+    }
+
+    private void loadMoreIntoGridviewIfNeeded(final int currentPage) {
+        Log.d("DEBUG", "array adapter count:" + articleArrayAdapter.getCount());
+        if (articleArrayAdapter.getCount() < BASE_GRIDVIEW_CAPACITY) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    makeSearchApiCall(false, currentPage + 1);
+                }
+            }, 2000L);
+        }
+    }
+
+    private void makeSearchApiCall(boolean reset, int page) {
+        final int targetPage = reset ? 0 : page;
+
         String query = etQuery.getText().toString();
- //     Toast.makeText(this, "Query = " + query, Toast.LENGTH_LONG).show();
         AsyncHttpClient httpClient = new AsyncHttpClient();
         String url = "http://api.nytimes.com/svc/search/v2/articlesearch.json";
         RequestParams params = new RequestParams();
         params.add("api-key", API_KEY);
-        params.add("page", "0");
+        params.add("page", String.valueOf(targetPage));
         if (!android.text.TextUtils.isEmpty(query)) {
             params.add("q", query);
         }
@@ -91,15 +124,19 @@ public class SearchActivity extends AppCompatActivity {
         }
         Log.d("DEBUG", "URL:" + url);
         Log.d("DEBUG", params.toString());
+        if (reset) {
+            articleArrayAdapter.clear();
+            endlessScrollListener.reset();
+        }
         httpClient.get(url, params, new JsonHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 JSONArray jsonArticle = null;
                 try {
                     jsonArticle = response.getJSONObject("response").getJSONArray("docs");
-                    articleArrayAdapter.clear();
                     articleArrayAdapter.addAll(Article.fromJSONArray(jsonArticle));
-                    Log.d("DEBUG", articles.toString());
+                    endlessScrollListener.onLoaded(targetPage, articleArrayAdapter.getCount());
+                    loadMoreIntoGridviewIfNeeded(targetPage);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -108,8 +145,11 @@ public class SearchActivity extends AppCompatActivity {
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable,
                                   JSONObject errorResponse) {
-                Toast.makeText(SearchActivity.this, "FAIL", Toast.LENGTH_LONG).show();
-                Log.d("DEBUG", errorResponse.toString());
+                Toast.makeText(SearchActivity.this, "Too fast.", Toast.LENGTH_LONG).show();
+                if (errorResponse != null) {
+                    Log.d("DEBUG", errorResponse.toString());
+                }
+                endlessScrollListener.onLoadFailed(targetPage, articleArrayAdapter.getCount());
             }
         });
     }
